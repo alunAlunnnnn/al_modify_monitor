@@ -1,0 +1,14 @@
+[general]
+name=AL Modify Monitor
+qgisMinimumVersion=3.22
+qgisMaximumVersion=4.99
+description=Automatically tracks geometry modifications and marks status via customizable hotkeys for multi-layer QC.
+about=A edit tool for GIS data editors. It automatically updates a status field when a geometry is modified and provides global configurable hotkeys (1-0) to manually override the status of the currently active layer.
+version=0.0.1
+author=Lun.A
+email=517308447@qq.com
+repository=https://github.com/yourusername/al_modify_monitor
+tracker=https://github.com/yourusername/al_modify_monitor/issues
+tags=editing, tracking, geometry, quality control, shortcut
+category=Vector
+icon=icon.png
