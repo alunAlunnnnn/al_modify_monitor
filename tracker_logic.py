@@ -6,7 +6,7 @@ from qgis.PyQt.QtWidgets import QShortcut
 from qgis.PyQt.QtGui import QKeySequence, QColor
 from qgis.PyQt.QtCore import Qt
 
-# 跨 Qt5/Qt6 获取底层类型兼容方案
+
 try:
     from qgis.PyQt.QtCore import QMetaType
 

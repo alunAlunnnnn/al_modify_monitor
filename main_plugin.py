@@ -34,6 +34,7 @@ class ALModifyMonitorPlugin:
         # 绑定 UI 交互信号
         self.dock.toggle_btn.clicked.connect(self.on_toggle_clicked)
         self.dock.list_layers.itemClicked.connect(self.populate_fields)
+        self.dock.btn_refresh.clicked.connect(self.refresh_layer_list)
 
         # 绑定 QGIS 工程生命周期 (规则 5: 完美生命周期)
         QgsProject.instance().layersRemoved.connect(self.on_layers_removed)
@@ -69,23 +70,34 @@ class ALModifyMonitorPlugin:
             self.dock.show()
 
     def refresh_layer_list(self, _=None):
-        """抓取工程中所有矢量图层填充至列表"""
-        if self.dock.toggle_btn.isChecked():
-            return
-
-        self.dock.list_layers.clear()
-
+        """抓取工程中所有矢量图层填充至列表，并智能保持勾选状态"""
         # 兼容 Qt5/6 的强类型枚举
         item_flag = getattr(Qt, 'ItemFlag', Qt)
         check_state = getattr(Qt, 'CheckState', Qt)
         data_role = getattr(Qt, 'ItemDataRole', Qt)
+
+        # 1. 记忆当前的勾选状态
+        checked_layer_ids = []
+        for i in range(self.dock.list_layers.count()):
+            item = self.dock.list_layers.item(i)
+            if item.checkState() == check_state.Checked:
+                checked_layer_ids.append(item.data(data_role.UserRole))
+
+        # 2. 清空并重建列表
+        self.dock.list_layers.clear()
 
         layers = QgsProject.instance().mapLayers().values()
         for layer in layers:
             if layer.type() == QgsMapLayer.VectorLayer:
                 item = __import__('qgis.PyQt.QtWidgets').PyQt.QtWidgets.QListWidgetItem(layer.name())
                 item.setFlags(item.flags() | item_flag.ItemIsUserCheckable)
-                item.setCheckState(check_state.Unchecked)
+
+                # 3. 恢复勾选状态
+                if layer.id() in checked_layer_ids:
+                    item.setCheckState(check_state.Checked)
+                else:
+                    item.setCheckState(check_state.Unchecked)
+
                 item.setData(data_role.UserRole, layer.id())
                 self.dock.list_layers.addItem(item)
 
@@ -144,9 +156,12 @@ class ALModifyMonitorPlugin:
             self.iface.messageBar().pushInfo("追踪停止", "已安全解绑所有监控信号。")
 
     def on_layers_removed(self, layer_ids):
-        """生命周期钩子：图层被删时解绑"""
+        """生命周期钩子：图层被删时解绑底层，并刷新UI"""
         for lid in layer_ids:
             self.engine.remove_layer_tracking(lid)
+
+        # ======= 新增：底层解绑后，同步更新 UI 列表 =======
+        self.refresh_layer_list()
 
     def on_project_cleared(self):
         """生命周期钩子：新建工程时完全停止"""

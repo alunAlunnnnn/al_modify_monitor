@@ -30,8 +30,19 @@ class ALMonitorDockWidget(QDockWidget):
         field_layout.addWidget(self.combo_field)
         self.main_layout.addLayout(field_layout)
 
-        # 3. 图层选择区
-        self.main_layout.addWidget(QLabel("选择要追踪的矢量图层:"))
+        # ==================== 修改后 ====================
+        # 3. 图层选择区 (带水平布局与刷新按钮)
+        layer_header_layout = QHBoxLayout()
+        layer_header_layout.addWidget(QLabel("选择要追踪的矢量图层:"))
+        layer_header_layout.addStretch()  # 弹簧，把按钮推到最右侧
+
+        self.btn_refresh = QPushButton("刷新图层")  # 新增的刷新按钮
+        # 给按钮一点样式，让它看起来更精致小巧
+        self.btn_refresh.setStyleSheet("QPushButton { padding: 2px 8px; }")
+        layer_header_layout.addWidget(self.btn_refresh)
+
+        self.main_layout.addLayout(layer_header_layout)
+
         self.list_layers = QListWidget()
         self.main_layout.addWidget(self.list_layers)
 
