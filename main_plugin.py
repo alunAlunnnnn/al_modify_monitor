@@ -1,5 +1,7 @@
+import os
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtGui import QIcon
 from qgis.core import QgsProject, QgsMapLayer
 from qgis.utils import iface
 from .dock_widget import ALMonitorDockWidget
@@ -17,7 +19,8 @@ class ALModifyMonitorPlugin:
     def initGui(self):
         """挂载 UI 到 QGIS"""
         # 创建菜单栏和工具栏动作
-        self.action = QAction("AL Modify Monitor", self.iface.mainWindow())
+        icon_path = os.path.join(os.path.dirname(__file__), 'icon.png')
+        self.action = QAction(QIcon(icon_path), "AL Modify Monitor", self.iface.mainWindow())
         self.action.triggered.connect(self.run)
         self.iface.addToolBarIcon(self.action)
         self.iface.addPluginToVectorMenu("AL Modify Monitor", self.action)

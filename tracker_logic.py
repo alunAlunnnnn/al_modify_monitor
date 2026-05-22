@@ -1,7 +1,9 @@
-from qgis.core import (QgsProject, QgsVectorLayer, QgsField, QgsMessageLog)
+from qgis.core import (QgsProject, QgsVectorLayer, QgsField, QgsMessageLog,
+                       QgsWkbTypes, QgsSymbol, QgsRendererCategory,
+                       QgsCategorizedSymbolRenderer)
 from qgis.utils import iface
 from qgis.PyQt.QtWidgets import QShortcut
-from qgis.PyQt.QtGui import QKeySequence
+from qgis.PyQt.QtGui import QKeySequence, QColor
 from qgis.PyQt.QtCore import Qt
 
 # 跨 Qt5/Qt6 获取底层类型兼容方案
@@ -92,6 +94,8 @@ class TrackerEngine:
             # 注册监听
             layer.geometryChanged.connect(self._on_geometry_changed)
             self.tracked_data[layer.id()] = {'layer': layer, 'field_idx': field_idx}
+
+            self._apply_categorized_symbology(layer, field_name)
             success_count += 1
 
         return success_count
@@ -158,3 +162,70 @@ class TrackerEngine:
             active_layer.changeAttributeValue(fid, f_idx, val)
         active_layer.endEditCommand()
         active_layer.triggerRepaint()
+
+    def _apply_categorized_symbology(self, layer, field_name):
+        """自动检测 Single Symbol 并转换为分类符号 (Categorized)"""
+        # 1. 拦截：仅处理单一符号的图层
+        if layer.renderer().type() != 'singleSymbol':
+            return
+
+        # 2. 提取需要创建分类的所有值 (去重)，确保至少有我们追踪的值
+        tracked_values = set(self.hotkey_settings.values())
+
+        categories = []
+        geom_type = layer.geometryType()
+
+        # 兼容 Qt5/6 的无填充枚举 (用于面状数据透明)
+        brush_style = getattr(Qt, 'BrushStyle', Qt)
+
+        for val_str in tracked_values:
+            # 尝试转为整型以匹配数据库类型
+            try:
+                val = int(val_str)
+            except ValueError:
+                val = val_str
+
+            # 创建基于几何类型的默认符号
+            symbol = QgsSymbol.defaultSymbol(geom_type)
+            if not symbol:
+                continue
+
+            # 3. 颜色映射逻辑 (1=绿, 0=红, 其他=蓝色系作为备选)
+            if val_str == '1':
+                color = QColor(0, 255, 0)  # 纯绿
+            elif val_str == '0':
+                color = QColor(255, 0, 0)  # 纯红
+            else:
+                color = QColor(0, 150, 255)  # 其他值为亮蓝色
+
+            # 4. 根据几何类型精细化样式
+            if geom_type == QgsWkbTypes.PolygonGeometry:
+                # 面要素：无填充，仅改变轮廓颜色，加粗轮廓
+                layer_sym = symbol.symbolLayer(0)
+                layer_sym.setBrushStyle(brush_style.NoBrush)
+                layer_sym.setStrokeColor(color)
+                layer_sym.setStrokeWidth(0.66)  # 稍微加粗让用户更容易看清
+            else:
+                # 点/线要素：直接改变主颜色
+                symbol.setColor(color)
+                if geom_type == QgsWkbTypes.LineGeometry:
+                    symbol.symbolLayer(0).setWidth(0.66)
+
+            # 创建该分类
+            category = QgsRendererCategory(val, symbol, str(val))
+            categories.append(category)
+
+        # 5. 添加一个兜底的默认分类 (其他所有未匹配的值)
+        default_symbol = QgsSymbol.defaultSymbol(geom_type)
+        if geom_type == QgsWkbTypes.PolygonGeometry:
+            default_symbol.symbolLayer(0).setBrushStyle(brush_style.NoBrush)
+            default_symbol.symbolLayer(0).setStrokeColor(QColor(150, 150, 150))  # 灰色轮廓
+        else:
+            default_symbol.setColor(QColor(150, 150, 150))
+
+        categories.append(QgsRendererCategory("", default_symbol, "其他/未标记"))
+
+        # 6. 生成并应用分类渲染器
+        renderer = QgsCategorizedSymbolRenderer(field_name, categories)
+        layer.setRenderer(renderer)
+        layer.triggerRepaint()
