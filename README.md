@@ -1,66 +1,82 @@
-# Usage
-
-本项目是 QGIS 插件，用于监测矢量数据的几何是否被修改，若被修改则自动将状态字段对应记录的值改为 1，几何的监测包括平移、旋转、缩放、顶点编辑等。
-
-
-
-为什么会有这个插件？因为我在检测、修正大范围数据时，很容易搞混哪里是已经修改了的，哪里是没有修改了的。通过自己建立字段，每次修改都要手动填充字段值非常麻烦，所以做了这个懒人插件以减轻对那些不得不人工验证或修改大批量数据上的手工量。截止 2026.05.22 是插件第一版（v0.0.1）可能会碰到一些 bug（目前我自己使用还没碰到，但是没有经过长期、大量测试），请在修改时积极保存数据，如果有 bug 不着急可以提 issue，或者你直接改了提 pr，很着急又不想自己改的可以将详情描述清楚发邮件到 517308447@qq.com，我看到且空闲的话会优先进行修复。
+<div align="right">
+  <strong>English</strong> | <a href="./README_CN.md">简体中文</a>
+</div>
 
 
+# AL Modify Monitor
 
-&nbsp;
-
-**图层选择**：支持选择单个或多个图层，开始追踪后在 "AL Modify Monitor" 窗口中设置的快捷将将生效，点击对应的快捷键（数字键，不区分小键盘）后会自动向被选择的数据的指定状态字段填充自定义的写入值（在快捷键窗口中设置的值）；
-
-**状态字段**：可以选择任意字段，若不选择任何字段则自动新建 "al_check" 的数值型字段，默认值为 0；
-
-**图层样式**：点击"开启追踪（Start Tracking）"后会检测当前图层是否使用的是简单的 Single Symbol，若是则推测用户希望使用推荐的用法，则会自动将被追踪图层的样式改为 Categorized 并自动填充激活快捷键中对应的值作为独立的样式；
+**AL Modify Monitor** is a QGIS plugin designed to automatically track geometry modifications in vector data. When a feature's geometry (via translation, rotation, scaling, or vertex editing) is altered, the plugin automatically updates a designated status field to `1`. 
 
 
 
-&nbsp;
+<br>
 
-**插件安装**：
+## Motivation
 
-1. 插件市场安装，找到 AL Modify Monitor 插件并安装；
+When validating, QA-ing, or correcting large-scale datasets, it's incredibly easy to lose track of which features have been modified and which haven't. Manually updating a status field after every single geometry tweak is tedious and error-prone. I built this "lazy" tool to reduce the manual overhead for GIS professionals who need to verify or correct massive amounts of spatial data. 
 
-<img src="./README.assets/image-20260522170848120.png" alt="image-20260522170848120" style="zoom: 50%;" />
-
-2. 下载源码包并放到 QGIS 插件目录下（如 C:\Users\alun\AppData\Roaming\QGIS\QGIS4\profiles\default\python\plugins\al_modify_monitor）
-
-<img src="./README.assets/image-20260522171105391.png" alt="image-20260522171105391" style="zoom: 67%;" />
+> **Note:** As of May 22, 2026, this is the initial release (v0.0.1). While it runs stably in my daily workflow, it hasn't undergone extensive long-term testing. Please remember to save your edits frequently. If you encounter bugs, feel free to open an issue or submit a PR. For urgent fixes, you can email me with detailed descriptions at [517308447@qq.com](mailto:517308447@qq.com) or alunzuishuai@gmail.com, and I will prioritize it when available.
 
 
 
+<br>
 
+## Core Features
 
-&nbsp;
-
-**用法推荐**：
-
-1. 安装并激活插件，成功后会自动添加插件图标；
-
-<img src="./README.assets/image-20260522171524508.png" alt="image-20260522171524508" style="zoom:50%;" />
-
-2. 添加矢量图层到当前 QGIS 工程中；
-
-<img src="./README.assets/image-20260522172038041.png" alt="image-20260522172038041" style="zoom:50%;" />
-
-3. 选择图层并激活追踪（不需要选择状态自动，让插件自己去创建）
-
-<img src="./README.assets/image-20260522172342792.png" alt="image-20260522172342792" style="zoom: 50%;" />
-
-<img src="./README.assets/image-20260522172510217.png" alt="image-20260522172510217" style="zoom:33%;" />
-
-4. 开始编辑，编辑的过程中，几何被修改的数据会自动变色。默认是应用的状态字段中值为 0 的红色，编辑几何后字段值会被自动设置为 1，颜色也会变成绿色；
-
-<img src="./README.assets/image-20260522172749237.png" alt="image-20260522172749237" style="zoom:50%;" />
-
-5. 当不需要修改几何，但是要将数据设置为 checked 的颜色，就需要使用自定义快捷键来完成，选中数据并通过数字键 1 改为已修改，或者通过数字键3（要激活，我这里已经激活了快捷键1、2、3）来改为值 3；
-
-   <img src="./README.assets/image-20260522173658354.png" alt="image-20260522173658354" style="zoom:50%;" />
+* **Layer Selection:** Supports selecting single or multiple vector layers. Once tracking starts, the custom hotkeys configured in the "AL Modify Monitor" panel become active. Pressing the designated hotkey (number keys, numpad independent) will automatically populate the specified status field of the selected features with your custom value.
+* **Status Field:** You can choose any existing field to record the status. If no field is selected, the plugin will automatically create a new numeric field named `al_check` with a default value of `0`.
+* **Smart Symbology:** Upon clicking "Start Tracking", the plugin checks if the current layer is using a `Single Symbol` renderer. If so, it assumes you want visual feedback and automatically switches the symbology to `Categorized`. It then uses the active hotkey values to assign distinct colors/styles to modified features.
 
 
 
+<br>
+
+## Installation
+
+**Method 1: QGIS Plugin Repository (Recommended)**
+1. Open QGIS, go to `Plugins` > `Manage and Install Plugins...`
+2. Search for **AL Modify Monitor** and click Install.
+
+<img src="./README.assets/image-20260522170848120.png" alt="Plugin Repository Installation" style="zoom: 50%;" />
+
+**Method 2: Manual Installation from Source**
+1. Download the source code zip archive.
+2. Extract the folder and place it into your QGIS plugins directory. 
+   *(e.g., `C:\Users\alun\AppData\Roaming\QGIS\QGIS4\profiles\default\python\plugins\al_modify_monitor`)*
+
+<img src="./README.assets/image-20260522171105391.png" alt="Manual Installation Path" style="zoom: 67%;" />
 
 
+
+<br>
+
+## Quick Start / Recommended Workflow
+
+1. **Activate the Plugin:** Once installed and activated, the plugin icon will appear in your toolbar.
+   
+   <img src="./README.assets/image-20260522171524508.png" alt="Plugin Icon" style="zoom:50%;" />
+
+   
+   
+2. **Load Data:** Add your target vector layer(s) into the current QGIS project.
+   
+   <img src="./README.assets/image-20260522172038041.png" alt="Load Data" style="zoom:50%;" />
+
+   
+   
+3. **Initialize Tracking:** Select the layer and activate tracking. You don't need to manually select a status field, let the plugin create it automatically for the smoothest experience.
+   
+   <img src="./README.assets/image-20260522172342792.png" alt="Start Tracking" style="zoom: 50%;" />
+   <img src="./README.assets/image-20260522172510217.png" alt="Tracking Active" style="zoom:33%;" />
+
+   
+   
+4. **Edit Geometries:** Start editing. As you modify geometries, the affected features will automatically change color. By default, features with a status of `0` are red. Once edited, their status updates to `1` and they turn green.
+   
+   <img src="./README.assets/image-20260522172749237.png" alt="Geometry Editing Feedback" style="zoom:50%;" />
+
+   
+   
+5. **Attribute-Only Updates via Hotkeys:** If you don't need to edit a feature's geometry but want to mark it as "checked" (changing its color), use your custom hotkeys. Select the feature(s) and press `1` to mark it as modified, or press `3` to assign a value of 3 (assuming you have activated hotkeys 1, 2, and 3 in the panel).
+   
+   <img src="./README.assets/image-20260522173658354.png" alt="Hotkey Usage" style="zoom:50%;" />
